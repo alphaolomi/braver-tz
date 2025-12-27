@@ -45,8 +45,15 @@ class SystemInfo:
     linux_family: str     # "debian" | "rhel" | "arch" | "unknown" (only used on linux)
 
 
+# Global flag to control log output destination
+_PRINT_ONLY_MODE = False
+
 def log(msg: str) -> None:
-    print(msg, flush=True)
+    """Log message to stdout (or stderr if in print-only mode)."""
+    if _PRINT_ONLY_MODE:
+        print(msg, file=sys.stderr, flush=True)
+    else:
+        print(msg, flush=True)
 
 
 def validate_url(url: str) -> bool:
@@ -552,12 +559,16 @@ def install_linux(pkg: Path, family: str) -> None:
 
 
 def main() -> int:
+    global _PRINT_ONLY_MODE
     ap = argparse.ArgumentParser(description="Download latest stable Brave from GitHub Releases (and optionally install).")
     ap.add_argument("--dir", default=str(Path.home() / "Downloads"), help="Download directory (default: ~/Downloads)")
     ap.add_argument("--install", action="store_true", help="After download, prompt and attempt to install")
     ap.add_argument("--print-only", action="store_true", help="Only print chosen version and asset URL; do not download")
     ap.add_argument("--skip-verify", action="store_true", help="Skip integrity verification (not recommended)")
     args = ap.parse_args()
+
+    # Set global flag for log output redirection
+    _PRINT_ONLY_MODE = args.print_only
 
     try:
         si = detect_system()
