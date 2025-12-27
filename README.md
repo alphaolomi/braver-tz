@@ -1,5 +1,9 @@
 # brave-stable-fetch
 
+<p align="center">
+  <img src="braver-tz-banner.png" alt="braver-tz banner showing Brave shield, network nodes, and clock" width="100%">
+</p>
+
 A cross-platform Python script that automatically downloads the **latest stable release of Brave Browser** directly from **GitHub Releases**, without relying on brave.com.
 
 This project is useful in environments where the official Brave website is blocked or inaccessible, but GitHub remains reachable.
