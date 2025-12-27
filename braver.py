@@ -32,7 +32,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from urllib.error import URLError
+from urllib.error import URLError, HTTPError
 
 GITHUB_API_LATEST = "https://api.github.com/repos/brave/brave-browser/releases/latest"
 ALLOWED_DOMAINS = {"github.com", "githubusercontent.com"}
@@ -392,6 +392,29 @@ def download_file(url: str, dest: Path, expected_hash: Optional[str] = None,
                 log("Download complete.")
                 return
                 
+        except HTTPError as e:
+            # Handle 416 Range Not Satisfiable - file may have changed or range invalid
+            if e.code == 416:
+                log(f"Range request failed (416), deleting partial file and restarting...")
+                if dest.exists():
+                    dest.unlink()
+                resume_pos = 0
+                last_error = e
+                if attempt < max_retries - 1:
+                    wait = 2 ** attempt
+                    log(f"Download attempt {attempt + 1} failed: {e}. Retrying in {wait}s...")
+                    time.sleep(wait)
+                continue
+            else:
+                last_error = e
+                if attempt < max_retries - 1:
+                    wait = 2 ** attempt
+                    log(f"Download attempt {attempt + 1} failed: {e}. Retrying in {wait}s...")
+                    time.sleep(wait)
+                else:
+                    # Clean up partial download on final failure if empty
+                    if dest.exists() and dest.stat().st_size == 0:
+                        dest.unlink()
         except (URLError, socket.timeout, socket.error, OSError) as e:
             last_error = e
             if attempt < max_retries - 1:
