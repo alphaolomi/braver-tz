@@ -32,12 +32,12 @@ This project is useful in environments where the official Brave website is block
 | Platform | Status |
 |--------|--------|
 | macOS | ✅ Tested |
-| Windows | ⚠️ Untested |
+| Windows | ✅ Tested |
 | Linux | ⚠️ Untested |
 
 > **Important:**  
-> This script has currently been tested **only on macOS**.  
-> Windows and Linux users are strongly encouraged to test it and report results.
+> This script has currently been tested **macOS and Windows**.  
+> Linux users are strongly encouraged to test it and report results.
 
 Please open an issue if you encounter:
 - Incorrect installer selection
@@ -62,7 +62,7 @@ No third-party Python packages are required.
 Download the script:
 
 ```bash
-git clone https://github.com/<your-username>/braver-tz.git
+git clone https://github.com/maotora/braver-tz.git
 cd braver-tz
 ```
 

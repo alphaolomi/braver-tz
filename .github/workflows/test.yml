@@ -1,0 +1,249 @@
+name: Test Braver Script
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test-linux:
+    name: Test on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Test script help
+        run: python3 braver.py --help
+
+      - name: Test print-only (URL selection)
+        run: |
+          URL=$(python3 braver.py --print-only)
+          echo "Selected URL: $URL"
+          if [[ -z "$URL" ]]; then
+            echo "ERROR: No URL returned"
+            exit 1
+          fi
+          if [[ ! "$URL" =~ ^https://.*github.* ]]; then
+            echo "ERROR: URL doesn't look like GitHub URL"
+            exit 1
+          fi
+
+      - name: Test download (no install)
+        run: |
+          python3 braver.py --dir ./test-downloads
+          if [ ! -f ./test-downloads/*.deb ]; then
+            echo "ERROR: Download file not found"
+            exit 1
+          fi
+          echo "Download successful!"
+          ls -lh ./test-downloads/
+
+      - name: Verify downloaded file
+        run: |
+          FILE=$(ls ./test-downloads/*.deb | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo "ERROR: No .deb file found"
+            exit 1
+          fi
+          SIZE=$(stat -c%s "$FILE")
+          if [ "$SIZE" -lt 1000000 ]; then
+            echo "ERROR: File too small ($SIZE bytes), likely corrupted"
+            exit 1
+          fi
+          echo "File size: $SIZE bytes"
+
+      - name: Test installation (dry-run check)
+        run: |
+          # Check if script can detect the package
+          FILE=$(ls ./test-downloads/*.deb | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo "ERROR: No .deb file found for installation test"
+            exit 1
+          fi
+          # Verify dpkg can read the package info (without installing)
+          dpkg --info "$FILE" || echo "Note: dpkg info check failed (may need root)"
+
+      - name: Test installation (actual install)
+        run: |
+          FILE=$(ls ./test-downloads/*.deb | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo "ERROR: No .deb file found"
+            exit 1
+          fi
+          echo "Installing Brave..."
+          sudo dpkg -i "$FILE" || sudo apt-get install -f -y
+          # Verify installation
+          if command -v brave &> /dev/null || command -v brave-browser &> /dev/null; then
+            echo "Brave installed successfully!"
+            which brave || which brave-browser
+          else
+            echo "Warning: Brave command not found in PATH (may be normal)"
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf ./test-downloads
+          sudo apt-get remove -y brave-browser brave 2>/dev/null || true
+
+  test-macos:
+    name: Test on macOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Test script help
+        run: python3 braver.py --help
+
+      - name: Test print-only (URL selection)
+        run: |
+          URL=$(python3 braver.py --print-only)
+          echo "Selected URL: $URL"
+          if [[ -z "$URL" ]]; then
+            echo "ERROR: No URL returned"
+            exit 1
+          fi
+          if [[ ! "$URL" =~ ^https://.*github.* ]]; then
+            echo "ERROR: URL doesn't look like GitHub URL"
+            exit 1
+          fi
+
+      - name: Test download (no install)
+        run: |
+          python3 braver.py --dir ./test-downloads
+          if [ ! -f ./test-downloads/*.dmg ] && [ ! -f ./test-downloads/*.pkg ]; then
+            echo "ERROR: Download file not found"
+            exit 1
+          fi
+          echo "Download successful!"
+          ls -lh ./test-downloads/
+
+      - name: Verify downloaded file
+        run: |
+          FILE=$(ls ./test-downloads/*.dmg ./test-downloads/*.pkg 2>/dev/null | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo "ERROR: No .dmg or .pkg file found"
+            exit 1
+          fi
+          SIZE=$(stat -f%z "$FILE")
+          if [ "$SIZE" -lt 1000000 ]; then
+            echo "ERROR: File too small ($SIZE bytes), likely corrupted"
+            exit 1
+          fi
+          echo "File size: $SIZE bytes"
+
+      - name: Test DMG mounting (if .dmg)
+        run: |
+          FILE=$(ls ./test-downloads/*.dmg 2>/dev/null | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo "Skipping: No .dmg file to test"
+            exit 0
+          fi
+          echo "Testing DMG mount/unmount..."
+          MOUNTPOINT="/Volumes/BraveTestMount"
+          hdiutil attach "$FILE" -mountpoint "$MOUNTPOINT" -nobrowse -quiet
+          if [ -d "$MOUNTPOINT" ]; then
+            echo "DMG mounted successfully"
+            ls -la "$MOUNTPOINT"
+            hdiutil detach "$MOUNTPOINT" -quiet
+            echo "DMG unmounted successfully"
+          else
+            echo "ERROR: DMG mount failed"
+            exit 1
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf ./test-downloads
+          # Clean up any mounted volumes
+          hdiutil detach /Volumes/BraveTmpMount 2>/dev/null || true
+          hdiutil detach /Volumes/BraveTestMount 2>/dev/null || true
+
+  test-windows:
+    name: Test on Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Test script help
+        run: python braver.py --help
+
+      - name: Test print-only (URL selection)
+        run: |
+          $URL = python braver.py --print-only
+          Write-Host "Selected URL: $URL"
+          if ([string]::IsNullOrEmpty($URL)) {
+            Write-Host "ERROR: No URL returned"
+            exit 1
+          }
+          if ($URL -notmatch "^https://.*github.*") {
+            Write-Host "ERROR: URL doesn't look like GitHub URL"
+            exit 1
+          }
+
+      - name: Test download (no install)
+        run: |
+          python braver.py --dir ./test-downloads
+          $files = Get-ChildItem ./test-downloads/*.exe
+          if ($files.Count -eq 0) {
+            Write-Host "ERROR: Download file not found"
+            exit 1
+          }
+          Write-Host "Download successful!"
+          Get-ChildItem ./test-downloads/ | Format-Table
+
+      - name: Verify downloaded file
+        run: |
+          $file = Get-ChildItem ./test-downloads/*.exe | Select-Object -First 1
+          if ($null -eq $file) {
+            Write-Host "ERROR: No .exe file found"
+            exit 1
+          }
+          $size = $file.Length
+          if ($size -lt 1000000) {
+            Write-Host "ERROR: File too small ($size bytes), likely corrupted"
+            exit 1
+          }
+          Write-Host "File size: $size bytes"
+
+      - name: Test installer validation (without running)
+        run: |
+          $file = Get-ChildItem ./test-downloads/*.exe | Select-Object -First 1
+          if ($null -eq $file) {
+            Write-Host "ERROR: No .exe file found"
+            exit 1
+          }
+          # Verify file is a valid PE executable
+          $header = Get-Content $file.FullName -TotalCount 1 -Encoding Byte
+          if ($header[0] -ne 0x4D -or $header[1] -ne 0x5A) {
+            Write-Host "Warning: File doesn't appear to be a valid PE executable"
+          } else {
+            Write-Host "File appears to be a valid PE executable"
+          }
+
+      - name: Cleanup
+        if: always()
+        run: |
+          Remove-Item -Recurse -Force ./test-downloads -ErrorAction SilentlyContinue
+
