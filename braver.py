@@ -430,6 +430,10 @@ def download_file(url: str, dest: Path, expected_hash: Optional[str] = None,
 
 
 def prompt_yes_no(question: str, default_no: bool = True) -> bool:
+    # Check if stdin is available (interactive terminal)
+    if not sys.stdin.isatty():
+        # Non-interactive environment (CI, pipes, etc.) - return default
+        return not default_no
     suffix = " [y/N]: " if default_no else " [Y/n]: "
     ans = input(question + suffix).strip().lower()
     if not ans:
@@ -650,9 +654,14 @@ def main() -> int:
             return 0
 
         dest_dir = Path(args.dir).expanduser().resolve()
-        # Ensure destination is within user's home or explicitly allowed
-        if not str(dest_dir).startswith(str(Path.home())) and not args.dir.startswith("/"):
-            log(f"Warning: Download directory is outside home: {dest_dir}")
+        # Ensure destination is within user's home, current working directory, or explicitly allowed absolute path
+        cwd = Path.cwd()
+        is_in_home = str(dest_dir).startswith(str(Path.home()))
+        is_in_cwd = str(dest_dir).startswith(str(cwd))
+        is_absolute_allowed = args.dir.startswith("/") or (os.name == "nt" and len(args.dir) > 1 and args.dir[1] == ":")
+        
+        if not (is_in_home or is_in_cwd or is_absolute_allowed):
+            log(f"Warning: Download directory is outside home and current directory: {dest_dir}")
             if not prompt_yes_no("Continue anyway?", default_no=True):
                 return 1
         

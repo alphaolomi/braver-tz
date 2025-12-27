@@ -15,12 +15,12 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.12'
 
       - name: Test print-only (URL selection)
         run: |
@@ -57,12 +57,12 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.14'
 
       - name: Test print-only (URL selection)
         run: |
@@ -101,12 +101,12 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.9'
 
       - name: Test print-only (URL selection)
         run: |
@@ -119,8 +119,9 @@ jobs:
 
       - name: Test download
         run: |
-          python braver.py --dir ./test-downloads
-          $file = Get-ChildItem ./test-downloads/*.exe | Select-Object -First 1
+          $downloadDir = "$env:RUNNER_TEMP\brave-downloads"
+          python braver.py --dir "$downloadDir"
+          $file = Get-ChildItem "$downloadDir\*.exe" | Select-Object -First 1
           if ($null -eq $file) {
             Write-Host "ERROR: Download file not found"
             exit 1
@@ -130,9 +131,9 @@ jobs:
             Write-Host "ERROR: File too small ($size bytes)"
             exit 1
           }
-          Write-Host "Download successful: $($file.Name) ($size bytes)"
+          Write-Host "Download successful: $($file.Name) ($size bytes) from $downloadDir"
 
       - name: Cleanup
         if: always()
-        run: Remove-Item -Recurse -Force ./test-downloads -ErrorAction SilentlyContinue
+        run: Remove-Item -Recurse -Force "$env:RUNNER_TEMP\brave-downloads" -ErrorAction SilentlyContinue
 
