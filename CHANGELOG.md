@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Automatic SHA256 hash verification using asset digest from GitHub API
+
+### Improved
+- Enhanced installer selection logic with better fallback mechanisms
+- Comprehensive error handling with retry logic, timeout handling, and validation
+- Windows platform testing completed
+
 ## [1.0.0] - 2024-12-19
 
 ### Added

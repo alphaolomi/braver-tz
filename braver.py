@@ -617,18 +617,21 @@ def main() -> int:
         asset_name = asset.get("name", "unknown")
         url = asset.get("browser_download_url", "")
         
-        # Get hash if available (GitHub sometimes provides this in asset metadata)
-        # Note: GitHub API doesn't always provide checksums directly, but we can check
-        # for checksums files in the release assets
+        # Get hash if available from asset's digest field
         expected_hash = None
         if not args.skip_verify:
-            # Look for checksums file
-            for a in assets:
-                name_lower = a.get("name", "").lower()
-                if "checksum" in name_lower or "sha256" in name_lower:
-                    # Could download and parse checksums file here if needed
-                    # For now, we'll skip automatic hash verification unless hash is provided
-                    pass
+            # Extract SHA256 from asset's digest field (format: "sha256:hash")
+            digest = asset.get("digest", "")
+            if digest and digest.startswith("sha256:"):
+                expected_hash = digest[7:]  # Remove "sha256:" prefix
+                log(f"Found SHA256 hash for verification: {expected_hash[:16]}...")
+            else:
+                # Fallback: Look for checksums file in release assets
+                for a in assets:
+                    name_lower = a.get("name", "").lower()
+                    if "checksum" in name_lower or "sha256" in name_lower:
+                        # Could download and parse checksums file here if needed
+                        pass
 
         # Sanitize filename
         asset_name = sanitize_filename(asset_name)
