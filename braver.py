@@ -361,7 +361,7 @@ def download_file(url: str, dest: Path, expected_hash: Optional[str] = None,
                     total += resume_pos
                 
                 mode = "ab" if resume_pos > 0 else "wb"
-                log(f"Downloading:\n  {url}\n→ {dest}")
+                log(f"Downloading:\n  {url}\n-> {dest}")
                 with open(dest, mode) as f:
                     read = resume_pos
                     chunk = 1024 * 256
