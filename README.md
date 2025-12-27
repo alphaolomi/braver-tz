@@ -1,4 +1,4 @@
-# brave-stable-fetch
+# Braver-tz
 
 <p align="center">
   <img src="braver-tz-banner.png" alt="braver-tz banner showing Brave shield, network nodes, and clock" width="100%">
@@ -62,32 +62,32 @@ No third-party Python packages are required.
 Download the script:
 
 ```bash
-git clone https://github.com/<your-username>/brave-stable-fetch.git
-cd brave-stable-fetch
+git clone https://github.com/<your-username>/braver-tz.git
+cd braver-tz
 ```
 
 Run to download only:
 
 ```bash
-python3 brave_stable_fetch.py
+python3 braver.py
 ```
 
 Download **and** install (you will be prompted):
 
 ```bash
-python3 brave_stable_fetch.py --install
+python3 braver.py --install
 ```
 
 Print the direct download URL only (useful for automation):
 
 ```bash
-python3 brave_stable_fetch.py --print-only
+python3 braver.py --print-only
 ```
 
 Specify a custom download directory:
 
 ```bash
-python3 brave_stable_fetch.py --dir /path/to/downloads
+python3 braver.py --dir /path/to/downloads
 ```
 
 ---
@@ -119,7 +119,7 @@ If you hit a rate limit, set a token:
 
 ```bash
 export GITHUB_TOKEN=your_token_here
-python3 brave_stable_fetch.py
+python3 braver.py
 ```
 
 ---
