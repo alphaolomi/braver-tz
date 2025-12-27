@@ -112,7 +112,7 @@ jobs:
         run: |
           $URL = python braver.py --print-only
           Write-Host "Selected URL: $URL"
-          if ([string]::IsNullOrEmpty($URL)) -or ($URL -notmatch "^https://.*github.*") {
+          if ([string]::IsNullOrEmpty($URL) -or $URL -notmatch "^https://.*github.*") {
             Write-Host "ERROR: Invalid URL returned"
             exit 1
           }
